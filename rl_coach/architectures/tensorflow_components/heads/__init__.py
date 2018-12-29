@@ -2,6 +2,7 @@ from .categorical_q_head import CategoricalQHead
 from .ddpg_actor_head import DDPGActor
 from .dnd_q_head import DNDQHead
 from .dueling_q_head import DuelingQHead
+from .fun_head import FUNActor
 from .measurements_prediction_head import MeasurementsPredictionHead
 from .naf_head import NAFHead
 from .policy_head import PolicyHead
@@ -25,5 +26,6 @@ __all__ = [
     'QHead',
     'QuantileRegressionQHead',
     'RainbowQHead',
-    'VHead'
+    'VHead',
+    'FUNActor'
 ]

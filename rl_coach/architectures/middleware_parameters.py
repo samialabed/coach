@@ -14,16 +14,17 @@
 # limitations under the License.
 #
 
-from typing import List, Type, Union
+from typing import List, Union
 
 from rl_coach.base_parameters import MiddlewareScheme, NetworkComponentParameters
 
 
 class MiddlewareParameters(NetworkComponentParameters):
     def __init__(self, parameterized_class_name: str,
-                 activation_function: str='relu', scheme: Union[List, MiddlewareScheme]=MiddlewareScheme.Medium,
-                 batchnorm: bool=False, dropout_rate: float=0.0, name='middleware', dense_layer=None, is_training=False):
-        super().__init__(dense_layer=dense_layer)
+                 activation_function: str = 'relu', scheme: Union[List, MiddlewareScheme] = MiddlewareScheme.Medium,
+                 batchnorm: bool = False, dropout_rate: float = 0.0, name='middleware', dense_layer=None,
+                 is_training=False):
+        super(MiddlewareParameters, self).__init__(dense_layer=dense_layer)
         self.activation_function = activation_function
         self.scheme = scheme
         self.batchnorm = batchnorm
@@ -42,9 +43,12 @@ class FCMiddlewareParameters(MiddlewareParameters):
                  scheme: Union[List, MiddlewareScheme] = MiddlewareScheme.Medium,
                  batchnorm: bool = False, dropout_rate: float = 0.0,
                  name="middleware_fc_embedder", dense_layer=None, is_training=False):
-        super().__init__(parameterized_class_name="FCMiddleware", activation_function=activation_function,
-                         scheme=scheme, batchnorm=batchnorm, dropout_rate=dropout_rate, name=name, dense_layer=dense_layer,
-                         is_training=is_training)
+        super(FCMiddlewareParameters, self).__init__(parameterized_class_name="FCMiddleware",
+                                                     activation_function=activation_function,
+                                                     scheme=scheme, batchnorm=batchnorm, dropout_rate=dropout_rate,
+                                                     name=name,
+                                                     dense_layer=dense_layer,
+                                                     is_training=is_training)
 
 
 class LSTMMiddlewareParameters(MiddlewareParameters):
@@ -52,7 +56,12 @@ class LSTMMiddlewareParameters(MiddlewareParameters):
                  scheme: MiddlewareScheme = MiddlewareScheme.Medium,
                  batchnorm: bool = False, dropout_rate: float = 0.0,
                  name="middleware_lstm_embedder", dense_layer=None, is_training=False):
-        super().__init__(parameterized_class_name="LSTMMiddleware", activation_function=activation_function,
-                         scheme=scheme, batchnorm=batchnorm, dropout_rate=dropout_rate, name=name, dense_layer=dense_layer,
-                         is_training=is_training)
+        super(LSTMMiddlewareParameters, self).__init__(parameterized_class_name="LSTMMiddleware",
+                                                       activation_function=activation_function,
+                                                       scheme=scheme, batchnorm=batchnorm, dropout_rate=dropout_rate,
+                                                       name=name,
+                                                       dense_layer=dense_layer,
+                                                       is_training=is_training)
         self.number_of_lstm_cells = number_of_lstm_cells
+
+# TODO CLASS DiLSTM, Allow selecting R, % activate

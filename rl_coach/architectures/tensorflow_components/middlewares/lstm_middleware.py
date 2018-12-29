@@ -18,7 +18,7 @@
 import numpy as np
 import tensorflow as tf
 
-from rl_coach.architectures.tensorflow_components.layers import batchnorm_activation_dropout, Dense
+from rl_coach.architectures.tensorflow_components.layers import Dense
 from rl_coach.architectures.tensorflow_components.middlewares.middleware import Middleware
 from rl_coach.base_parameters import MiddlewareScheme
 from rl_coach.core_types import Middleware_LSTM_Embedding
@@ -26,7 +26,7 @@ from rl_coach.utils import force_list
 
 
 class LSTMMiddleware(Middleware):
-    def __init__(self, activation_function=tf.nn.relu, number_of_lstm_cells: int=256,
+    def __init__(self, activation_function=tf.nn.relu, number_of_lstm_cells: int = 256,
                  scheme: MiddlewareScheme = MiddlewareScheme.Medium,
                  batchnorm: bool = False, dropout_rate: float = 0.0,
                  name="middleware_lstm_embedder", dense_layer=Dense, is_training=False):
@@ -57,7 +57,7 @@ class LSTMMiddleware(Middleware):
             ))
 
         # add the LSTM layer
-        lstm_cell = tf.nn.rnn_cell.BasicLSTMCell(self.number_of_lstm_cells, state_is_tuple=True)
+        lstm_cell = tf.nn.rnn_cell.LSTMCell(self.number_of_lstm_cells, state_is_tuple=True)
         self.c_init = np.zeros((1, lstm_cell.state_size.c), np.float32)
         self.h_init = np.zeros((1, lstm_cell.state_size.h), np.float32)
         self.state_init = [self.c_init, self.h_init]
@@ -98,4 +98,3 @@ class LSTMMiddleware(Middleware):
                     self.dense_layer(128)
                 ]
         }
-
