@@ -25,13 +25,14 @@ from rl_coach.architectures.embedder_parameters import InputEmbedderParameters
 from rl_coach.architectures.head_parameters import FUNActorHeadParameters
 from rl_coach.architectures.layers import Dense
 from rl_coach.architectures.middleware_parameters import LSTMMiddlewareParameters
-from rl_coach.base_parameters import AgentParameters, MiddlewareScheme, EmbedderScheme
+from rl_coach.base_parameters import AgentParameters, EmbedderScheme
 from rl_coach.core_types import EnvironmentEpisodes, TrainingSteps
 from rl_coach.exploration_policies.e_greedy import EGreedyParameters
 from rl_coach.level_manager import LevelManager
 from rl_coach.memories.episodic import EpisodicHRLHindsightExperienceReplayParameters, \
     EpisodicHindsightExperienceReplayParameters
 from rl_coach.memories.episodic.episodic_hindsight_experience_replay import HindsightGoalSelectionMethod
+from rl_coach.memories.memory import MemoryGranularity
 from rl_coach.spaces import SpacesDefinition
 
 
@@ -43,7 +44,7 @@ class FUNJob(Enum):
 class FUNCriticNetworkParameters(DDPGCriticNetworkParameters):
     def __init__(self):
         super(FUNCriticNetworkParameters, self).__init__()
-        self.middleware_parameters = LSTMMiddlewareParameters(scheme=[Dense(64)] * 3,
+        self.middleware_parameters = LSTMMiddlewareParameters(scheme=[Dense(units=256)],
                                                               number_of_lstm_cells=256)
         # Shallow is conv2d with similar layer structure as the paper
         self.input_embedders_parameters = {'observation': InputEmbedderParameters(scheme=EmbedderScheme.Shallow),
@@ -57,7 +58,7 @@ class FUNCriticNetworkParameters(DDPGCriticNetworkParameters):
 class FUNActorNetworkParameters(DDPGActorNetworkParameters):
     def __init__(self):
         super(FUNActorNetworkParameters, self).__init__()
-        self.middleware_parameters = LSTMMiddlewareParameters(scheme=[Dense(64)] * 3,
+        self.middleware_parameters = LSTMMiddlewareParameters(scheme=[Dense(units=256)],
                                                               number_of_lstm_cells=256)
         self.input_embedders_parameters = {'observation': InputEmbedderParameters(scheme=EmbedderScheme.Shallow),
                                            'desired_goal': InputEmbedderParameters(scheme=EmbedderScheme.Empty)}
@@ -85,12 +86,14 @@ class FUNAgentParameters(AgentParameters):
             memory.hindsight_transitions_per_regular_transition = 3  # Slower sampling rate
             actor.learning_rate = 0.0001
             critic.learning_rate = 0.0001
+            memory.max_size = (MemoryGranularity.Transitions, 10000000)
         # Worker specific setup
         elif feudal_type == FUNJob.Worker:
             memory = EpisodicHindsightExperienceReplayParameters()
-            memory.hindsight_transitions_per_regular_transition = 5  # Faster sampling rate
+            memory.hindsight_transitions_per_regular_transition = 4  # Faster sampling rate
             actor.learning_rate = 0.001
             critic.learning_rate = 0.001
+            memory.max_size = (MemoryGranularity.Transitions, 12000000)
         else:
             raise ValueError("Select either Manager or Worker for the feudal network")
 
@@ -122,11 +125,11 @@ class FUNAgent(DDPGAgent):
 
     def learn_from_batch(self, batch):
         # TODO once implemented dilated-lstm include a softmax on workers batch (formula 10)
-        super(FUNAgent, self).learn_from_batch(batch)
+        return super(FUNAgent, self).learn_from_batch(batch)
 
     def train(self):
         # each network is train disjointly, nothing special done here
-        super(FUNAgent, self).train()
+        return super(FUNAgent, self).train()
 
     def choose_action(self, curr_state):
         return super(FUNAgent, self).choose_action(curr_state)

@@ -4,13 +4,39 @@ from rl_coach.agents.fun_agent import FUNAgentParameters, FUNJob
 from rl_coach.base_parameters import VisualizationParameters, PresetValidationParameters
 from rl_coach.core_types import EnvironmentEpisodes, EnvironmentSteps, TrainingSteps
 from rl_coach.environments.gym_environment import GymVectorEnvironment
+from rl_coach.exploration_policies.e_greedy import EGreedyParameters
+from rl_coach.exploration_policies.ou_process import OUProcessParameters
 from rl_coach.graph_managers.graph_manager import ScheduleParameters
+from rl_coach.graph_managers.hac_graph_manager import HACGraphManager
+from rl_coach.memories.memory import MemoryGranularity
+from rl_coach.schedules import ConstantSchedule
+from rl_coach.spaces import GoalsSpace, ReachingGoal
+
+
+### Manager NetworK: DiLSTM, with 256 hidden units
+
+# SET THE EMBEDDER TO MEDIUM and the following:
+# Followed by fully connected 256 hidden layer
+# Activcation is relu for all layers
+
+## state_space = Manager state space formulate the goal using a fully connected layer followed by relu activation
+# goal t i s generated using manager's rnn network
+# embedding vector w is set to k = 16
+# In the paper, two actor critic network are created and trained separately
+
+# INPUT is defined such as
+# fpercept: a CNN followed by fully connected layer.
+# CNN first layer: 16 8x8 filter of stride 4, followed by 32 4x4 filters of stride 2
+# worker_agent_params.input_embedders_parameters = {'observation': InputEmbedderParameters(), 'desired_goal' }
+# should the manager output go through another softmax layer?
+# defaults for worker are fine
+#### Worker Network: Simple LSTM, with 256 hidden units
+
+
+
 ####################
 # Graph Scheduling #
 ####################
-from rl_coach.graph_managers.hac_graph_manager import HACGraphManager
-from rl_coach.spaces import GoalsSpace, ReachingGoal
-
 schedule_params = ScheduleParameters()
 schedule_params.improve_steps = EnvironmentEpisodes(40 * 4 * 64)  # 40 epochs
 schedule_params.steps_between_evaluation_periods = EnvironmentEpisodes(4 * 64)  # 4 small batches of 64 episodes
@@ -20,27 +46,16 @@ schedule_params.heatup_steps = EnvironmentSteps(0)
 #########
 # Agent #
 #########
-# In the paper, two actor critic network are created and trained separately
+manager_agent_params = FUNAgentParameters(FUNJob.Manager)
+worker_agent_params = FUNAgentParameters(FUNJob.Worker)
 
-# INPUT is defined such as
-# fpercept: a CNN followed by fully connected layer.
-# CNN first layer: 16 8x8 filter of stride 4, followed by 32 4x4 filters of stride 2
+# TODO once Dilated lstm is implemeneted, replace the middleware layer with dilated lstm over lstm
 
-
-### Manager NetworK: DiLSTM, with 256 hidden units
 goals_space = GoalsSpace('achieved_goal',
                          ReachingGoal(distance_from_goal_threshold=np.array([0.09, 0.09, 0.09])),
                          distance_metric=GoalsSpace.DistanceMetric.Cosine)  # use cos distance as paper3
 
-manager_agent_params = FUNAgentParameters(FUNJob.Manager)
-# Manager learns on a slower temporal
-manager_agent_params.network_wrappers['actor'].learning_rate = 0.001
-manager_agent_params.network_wrappers['critic'].learning_rate = 0.001
 manager_agent_params.memory.goals_space = goals_space
-
-# TODO once Dilated lstm is implemeneted, replace the middleware layer with dilated lstm over lstm
-
-worker_agent_params = FUNAgentParameters(FUNJob.Worker)
 worker_agent_params.algorithm.in_action_space = goals_space
 worker_agent_params.memory.goals_space = goals_space
 
@@ -48,21 +63,7 @@ worker_agent_params.memory.goals_space = goals_space
 worker_agent_params.algorithm.num_consecutive_playing_steps = EnvironmentEpisodes(16 * 25)
 manager_agent_params.algorithm.num_consecutive_playing_steps = EnvironmentEpisodes(32)
 
-
-# worker_agent_params.input_embedders_parameters = {'observation': InputEmbedderParameters(), 'desired_goal' }
-# should the manager output go through another softmax layer?
-# defaults for worker are fine
-#### Worker Network: Simple LSTM, with 256 hidden units
-
 agents_params = [manager_agent_params, worker_agent_params]
-
-# SET THE EMBEDDER TO MEDIUM and the following:
-# Followed by fully connected 256 hidden layer
-# Activcation is relu for all layers
-
-## state_space = Manager state space formulate the goal using a fully connected layer followed by relu activation
-# goal t i s generated using manager's rnn network
-# embedding vector w is set to k = 16
 
 ###############
 # Environment #
