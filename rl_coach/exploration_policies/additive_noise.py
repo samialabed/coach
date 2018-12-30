@@ -21,7 +21,7 @@ import numpy as np
 from rl_coach.core_types import RunPhase, ActionType
 from rl_coach.exploration_policies.exploration_policy import ExplorationPolicy, ExplorationParameters
 from rl_coach.schedules import Schedule, LinearSchedule
-from rl_coach.spaces import ActionSpace, BoxActionSpace
+from rl_coach.spaces import ActionSpace, BoxActionSpace, GoalsSpace
 
 
 # TODO: consider renaming to gaussian sampling
@@ -45,6 +45,7 @@ class AdditiveNoise(ExplorationPolicy):
     2. Specified by the agents action. In case the agents action is a list with 2 values, the 1st one is assumed to
     be the mean of the action, and 2nd is assumed to be its standard deviation.
     """
+
     def __init__(self, action_space: ActionSpace, noise_percentage_schedule: Schedule,
                  evaluation_noise_percentage: float):
         """
@@ -57,11 +58,11 @@ class AdditiveNoise(ExplorationPolicy):
         self.noise_percentage_schedule = noise_percentage_schedule
         self.evaluation_noise_percentage = evaluation_noise_percentage
 
-        if not isinstance(action_space, BoxActionSpace):
+        if not isinstance(action_space, BoxActionSpace) and not isinstance(action_space, GoalsSpace):
             raise ValueError("Additive noise exploration works only for continuous controls."
                              "The given action space is of type: {}".format(action_space.__class__.__name__))
 
-        if not np.all(-np.inf < action_space.high) or not np.all(action_space.high < np.inf)\
+        if not np.all(-np.inf < action_space.high) or not np.all(action_space.high < np.inf) \
                 or not np.all(-np.inf < action_space.low) or not np.all(action_space.low < np.inf):
             raise ValueError("Additive noise exploration requires bounded actions")
 
@@ -100,4 +101,4 @@ class AdditiveNoise(ExplorationPolicy):
         return action
 
     def get_control_param(self):
-        return np.ones(self.action_space.shape)*self.noise_percentage_schedule.current_value
+        return np.ones(self.action_space.shape) * self.noise_percentage_schedule.current_value

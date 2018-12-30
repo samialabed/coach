@@ -23,7 +23,7 @@ from rl_coach.exploration_policies.additive_noise import AdditiveNoiseParameters
 from rl_coach.exploration_policies.exploration_policy import ExplorationParameters
 from rl_coach.exploration_policies.exploration_policy import ExplorationPolicy
 from rl_coach.schedules import Schedule, LinearSchedule
-from rl_coach.spaces import ActionSpace, DiscreteActionSpace, BoxActionSpace
+from rl_coach.spaces import ActionSpace, DiscreteActionSpace, BoxActionSpace, GoalsSpace
 from rl_coach.utils import dynamic_import_and_instantiate_module_from_params
 
 
@@ -56,9 +56,10 @@ class EGreedy(ExplorationPolicy):
     given continuous exploration policy, which is set to AdditiveNoise by default. In evaluation, the action is
     always selected according to the given continuous exploration policy (where its phase is set to evaluation as well).
     """
+
     def __init__(self, action_space: ActionSpace, epsilon_schedule: Schedule,
                  evaluation_epsilon: float,
-                 continuous_exploration_policy_parameters: ExplorationParameters=AdditiveNoiseParameters()):
+                 continuous_exploration_policy_parameters: ExplorationParameters = AdditiveNoiseParameters()):
         """
         :param action_space: the action space used by the environment
         :param epsilon_schedule: a schedule for the epsilon values
@@ -70,7 +71,7 @@ class EGreedy(ExplorationPolicy):
         self.epsilon_schedule = epsilon_schedule
         self.evaluation_epsilon = evaluation_epsilon
 
-        if isinstance(self.action_space, BoxActionSpace):
+        if isinstance(self.action_space, BoxActionSpace) or isinstance(self.action_space, GoalsSpace):
             # for continuous e-greedy (see http://www.cs.ubc.ca/~van/papers/2017-TOG-deepLoco/2017-TOG-deepLoco.pdf)
             continuous_exploration_policy_parameters.action_space = action_space
             self.continuous_exploration_policy = \
@@ -106,10 +107,10 @@ class EGreedy(ExplorationPolicy):
     def get_control_param(self):
         if isinstance(self.action_space, DiscreteActionSpace):
             return self.evaluation_epsilon if self.phase == RunPhase.TEST else self.epsilon_schedule.current_value
-        elif isinstance(self.action_space, BoxActionSpace):
+        elif isinstance(self.action_space, BoxActionSpace) or isinstance(self.action_space, GoalsSpace):
             return self.continuous_exploration_policy.get_control_param()
-
+        
     def change_phase(self, phase):
         super().change_phase(phase)
-        if isinstance(self.action_space, BoxActionSpace):
+        if isinstance(self.action_space, BoxActionSpace) or isinstance(self.action_space, GoalsSpace):
             self.continuous_exploration_policy.change_phase(phase)
